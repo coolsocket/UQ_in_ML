@@ -7,6 +7,8 @@
 from UQ_in_ML.general_utils import *
 import warnings
 warnings.filterwarnings('ignore')
+tf.to_float = lambda x: tf.cast(x, tf.float32)
+tf.compat.v1.disable_eager_execution()
 
 
 class Regressor:
@@ -41,7 +43,7 @@ class Regressor:
         with self.graph.as_default():
             # Set random seed
             if self.random_seed is not None:
-                tf.set_random_seed(self.random_seed)
+                tf.random.set_seed(self.random_seed)
 
             if prior_means == 'starting_point':
                 self.prior_starting_point = True
@@ -445,7 +447,7 @@ class VIRegressor(Regressor):
             # If you are re-staring training, start from the previously saved values
             if getattr(self, 'prior_starting_point', None) is not None:
                 starting_mu = sess.run(self.tf_variational_mu)
-                sess.run([tf.assign(m, val_) for m, val_ in zip(self.prior_means, starting_mu)])
+                sess.run([tf.compat.v1.assign(m, val_) for m, val_ in zip(self.prior_means, starting_mu)])
 
             # Run training loop
             for e in range(epochs):
@@ -939,8 +941,8 @@ class alphaBB(VIRegressor):
 
         with tf.compat.v1.Session(graph=self.graph) as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
-            sess.run([tf.assign(m, val_) for m, val_ in zip(self.tf_variational_mu, lso_mu)])
-            sess.run([tf.assign(m, val_) for m, val_ in zip(self.tf_variational_rho,
+            sess.run([tf.compat.v1.assign(m, val_) for m, val_ in zip(self.tf_variational_mu, lso_mu)])
+            sess.run([tf.compat.v1.assign(m, val_) for m, val_ in zip(self.tf_variational_rho,
                                                             [self._rho(s, module='np') for s in lso_sigma])])
             for e in range(epochs):
                 # print(sess.run(self.prior_means[0]))
@@ -1077,8 +1079,8 @@ class alphaBB(VIRegressor):
             #new_reg.variational_sigma = self.variational_sigma.copy()
             with tf.compat.v1.Session(graph=new_reg.graph) as sess:
                 sess.run(tf.compat.v1.global_variables_initializer())
-                sess.run([tf.assign(m, val_) for m, val_ in zip(new_reg.tf_variational_mu, lso_mu)])
-                sess.run([tf.assign(m, val_) for m, val_ in zip(new_reg.tf_variational_rho,
+                sess.run([tf.compat.v1.assign(m, val_) for m, val_ in zip(new_reg.tf_variational_mu, lso_mu)])
+                sess.run([tf.compat.v1.assign(m, val_) for m, val_ in zip(new_reg.tf_variational_rho,
                                                                 [new_reg._rho(s, module='np') for s in lso_sigma])])
                 for e in range(epochs_refit):
                     # print(sess.run(self.prior_means[0]))
@@ -1517,8 +1519,8 @@ class BayesByBackpropWithCorr(VIRegressor):
 
             # If you are re-staring training, start from the previously saved values
             if getattr(self, 'variational_mu', None) is not None:
-                sess.run([tf.assign(tf_, val_) for tf_, val_ in zip(self.tf_variational_mu, self.variational_mu)])
-                sess.run([tf.assign(tf_, np.log(np.exp(val_) - 1.)) for tf_, val_
+                sess.run([tf.compat.v1.assign(tf_, val_) for tf_, val_ in zip(self.tf_variational_mu, self.variational_mu)])
+                sess.run([tf.compat.v1.assign(tf_, np.log(np.exp(val_) - 1.)) for tf_, val_
                           in zip(self.tf_variational_rho, self.variational_sigma)])
 
             # Run training loop
